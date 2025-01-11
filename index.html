@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>세 자리 덧셈</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            margin: 0;
+        }
+        #game-container {
+            display: none;
+            padding: 20px;
+        }
+        #difficulty-selection {
+            margin-top: 100px;
+        }
+        .difficulty-button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #4682b4;
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+        .difficulty-button:hover {
+            background-color: #5a9bd3;
+        }
+        #name-input-container {
+            margin: 20px;
+        }
+        #name-input {
+            font-size: 20px;
+            padding: 10px;
+            width: 300px;
+        }
+        #question {
+            font-size: 40px;
+            margin: 20px 0;
+        }
+        #answer-input {
+            font-size: 30px;
+            padding: 10px;
+            width: 200px;
+            text-align: center;
+        }
+        #submit-button {
+            padding: 10px 20px;
+            font-size: 20px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        #send-score {
+            padding: 10px 20px;
+            font-size: 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            background-color: #32cd32;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            display: none;
+        }
+        #energy-bar {
+            width: 80%;
+            height: 30px;
+            background-color: #ddd;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        #energy-inner {
+            height: 100%;
+            background-color: #32cd32;
+            width: 100%;
+        }
+        #score, #lives, #total-time {
+            font-size: 20px;
+            margin: 10px;
+        }
+        #response {
+            margin-top: 20px;
+            font-size: 18px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>세 자리 덧셈</h1>
+
+    <div id="name-input-container">
+        <h2>이름을 입력하세요:</h2>
+        <input type="text" id="name-input" placeholder="이름 입력">
+    </div>
+
+    <div id="difficulty-selection">
+        <h2>난이도를 선택하세요:</h2>
+        <button class="difficulty-button" data-level="최상" data-time="20000" data-score="20">최상</button>
+        <button class="difficulty-button" data-level="상" data-time="30000" data-score="15">상</button>
+        <button class="difficulty-button" data-level="중" data-time="40000" data-score="13">중</button>
+        <button class="difficulty-button" data-level="하" data-time="0" data-score="10">하</button>
+    </div>
+
+    <div id="game-container">
+        <div id="energy-bar">
+            <div id="energy-inner"></div>
+        </div>
+        <div id="question"></div>
+        <input type="number" id="answer-input" autocomplete="off">
+        <br>
+        <button id="submit-button">제출</button>
+        <div id="score">점수: 0</div>
+        <div id="lives">남은 기회: 3</div>
+        <div id="total-time">총 시간: 0초</div>
+        <div id="response"></div>
+    </div>
+
+    <button id="send-score">점수 전송</button>
+
+    <script>
+        const difficultyButtons = document.querySelectorAll('.difficulty-button');
+        const gameContainer = document.getElementById('game-container');
+        const questionElement = document.getElementById('question');
+        const answerInput = document.getElementById('answer-input');
+        const submitButton = document.getElementById('submit-button');
+        const sendScoreButton = document.getElementById('send-score');
+        const energyInner = document.getElementById('energy-inner');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const totalTimeElement = document.getElementById('total-time');
+        const nameInput = document.getElementById('name-input');
+        const responseElement = document.getElementById('response');
+
+        let timeLimit, scorePerQuestion, levelName;
+        let currentQuestion, correctAnswer;
+        let timer, totalTimeTimer;
+        let remainingLives = 3;
+        let totalScore = 0;
+        let totalTime = 0;
+        let initialTimeLimit;
+
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const playerName = nameInput.value.trim();
+                if (!playerName) {
+                    alert('이름을 입력하세요!');
+                    return;
+                }
+
+                levelName = button.getAttribute('data-level');
+                timeLimit = parseInt(button.getAttribute('data-time'));
+                initialTimeLimit = timeLimit;
+                scorePerQuestion = parseInt(button.getAttribute('data-score'));
+                document.getElementById('difficulty-selection').style.display = 'none';
+                gameContainer.style.display = 'block';
+                startGame();
+            });
+        });
+
+        function startGame() {
+            generateQuestion();
+            totalTimeTimer = setInterval(() => {
+                totalTime++;
+                totalTimeElement.textContent = `총 시간: ${totalTime}초`;
+            }, 1000);
+        }
+
+        function generateQuestion() {
+            const num1 = getRandomNumber();
+            const num2 = getRandomNumber();
+            correctAnswer = num1 + num2;
+            questionElement.textContent = `${num1} + ${num2} = ?`;
+            answerInput.value = '';
+            answerInput.focus();
+        }
+
+        function getRandomNumber() {
+            return Math.floor(Math.random() * 900) + 100;
+        }
+
+        submitButton.addEventListener('click', checkAnswer);
+        answerInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        function checkAnswer() {
+            const playerAnswer = parseInt(answerInput.value);
+            if (playerAnswer === correctAnswer) {
+                totalScore += scorePerQuestion;
+                scoreElement.textContent = `점수: ${totalScore}`;
+            } else {
+                remainingLives--;
+                livesElement.textContent = `남은 기회: ${remainingLives}`;
+                alert(`틀렸습니다! 정답은 ${correctAnswer}입니다.`);
+                if (remainingLives === 0) {
+                    endGame();
+                    return;
+                }
+            }
+            generateQuestion();
+        }
+
+        function endGame() {
+            clearInterval(totalTimeTimer);
+            alert(`게임 종료! 총 점수: ${totalScore}점, 총 시간: ${totalTime}초`);
+            sendScoreButton.style.display = 'block';
+        }
+
+        sendScoreButton.addEventListener('click', () => {
+            const playerName = nameInput.value.trim();
+            saveData('세 자리 덧셈', playerName, totalScore, totalTime);
+        });
+
+        async function saveData(game, name, score, elapsedTime) {
+            const FUNCTION_URL = "https://us-central1-record-f420d.cloudfunctions.net/report";
+
+            const requestData = {
+                game,
+                name,
+                score: parseInt(score, 10),
+                elapsedTime: parseInt(elapsedTime, 10)
+            };
+
+            try {
+                const response = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const responseData = await response.json();
+
+                if (response.ok) {
+                    responseElement.textContent = `성공: ${JSON.stringify(responseData, null, 2)}`;
+                } else {
+                    responseElement.textContent = `오류: ${JSON.stringify(responseData, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('요청 실패:', error);
+                responseElement.textContent = `네트워크 오류: ${error.message}`;
+            }
+        }
+    </script>
+
+</body>
+</html>
